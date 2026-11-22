@@ -1,0 +1,10 @@
+# Worker deps installed on top of kohya-ss/sd-scripts v0.13.0 (its own pinned
+# requirements.txt is installed first). torch / torchvision / triton / nvidia-*
+# come from the PyTorch base image and are frozen as pip constraints.
+runpod==2.4.0
+boto3==1.44.9
+hf_transfer==0.1.9
+bitsandbytes==0.50.2
+requests>=2.31
+Pillow>=10.0
+datasets==4.8.5

@@ -1,0 +1,42 @@
+{
+  "tests": [
+    {
+      "name": "sdxl_lora_smoke_30_steps",
+      "input": {
+        "base_model": "sdxl",
+        "dataset_url": "https://raw.githubusercontent.com/prilojject/runpod-image-lora-trainer/main/examples/datasets/owl_zxowl.zip",
+        "trigger_word": "zxowl",
+        "class_word": "figurine",
+        "preset": "object",
+        "steps": 30,
+        "rank": 8,
+        "resolution": 1024,
+        "num_samples": 1,
+        "sample_steps": 20,
+        "run_name": "hub-test-sdxl"
+      },
+      "timeout": 1500000
+    }
+  ],
+  "config": {
+    "gpuTypeId": "NVIDIA GeForce RTX 4090",
+    "gpuCount": 1,
+    "env": [
+      {
+        "key": "PRESET",
+        "value": "object"
+      }
+    ],
+    "allowedCudaVersions": [
+      "13.4",
+      "13.3",
+      "13.2",
+      "13.1",
+      "13.0",
+      "12.9",
+      "12.8",
+      "12.7",
+      "12.6"
+    ]
+  }
+}

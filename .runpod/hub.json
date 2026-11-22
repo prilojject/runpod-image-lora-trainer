@@ -1,0 +1,344 @@
+{
+  "title": "Image LoRA Trainer (SDXL & FLUX.1)",
+  "description": "Train SDXL or FLUX.1 LoRAs from a zip of your images (faces, styles, objects) with kohya-ss/sd-scripts on Runpod Serverless. Send a dataset URL and a trigger word; get a .safetensors LoRA on your Hugging Face repo, S3 bucket or network volume, plus sample images.",
+  "type": "serverless",
+  "category": "image",
+  "iconUrl": "https://raw.githubusercontent.com/prilojject/runpod-image-lora-trainer/main/.runpod/icon.png",
+  "config": {
+    "runsOn": "GPU",
+    "containerDiskInGb": 100,
+    "gpuCount": 1,
+    "gpuIds": "ADA_24,AMPERE_24,ADA_48_PRO,AMPERE_48",
+    "allowedCudaVersions": [
+      "13.4",
+      "13.3",
+      "13.2",
+      "13.1",
+      "13.0",
+      "12.9",
+      "12.8",
+      "12.7",
+      "12.6"
+    ],
+    "presets": [
+      {
+        "name": "SDXL - object / product (default)",
+        "defaults": {
+          "BASE_MODEL": "sdxl",
+          "PRESET": "object",
+          "STEPS": 1200,
+          "LORA_RANK": 16,
+          "LEARNING_RATE": "1e-4",
+          "RESOLUTION": 1024
+        }
+      },
+      {
+        "name": "SDXL - face / person",
+        "defaults": {
+          "BASE_MODEL": "sdxl",
+          "PRESET": "face",
+          "STEPS": 1500,
+          "LORA_RANK": 16,
+          "LEARNING_RATE": "1e-4",
+          "RESOLUTION": 1024
+        }
+      },
+      {
+        "name": "SDXL - art style",
+        "defaults": {
+          "BASE_MODEL": "sdxl",
+          "PRESET": "style",
+          "STEPS": 2000,
+          "LORA_RANK": 32,
+          "LEARNING_RATE": "1e-4",
+          "RESOLUTION": 1024
+        }
+      },
+      {
+        "name": "FLUX.1 [dev] - face / person (48 GB GPU, HF_TOKEN)",
+        "defaults": {
+          "BASE_MODEL": "flux-dev",
+          "PRESET": "face",
+          "STEPS": 1500,
+          "LORA_RANK": 16,
+          "LEARNING_RATE": "1e-4",
+          "RESOLUTION": 1024
+        }
+      },
+      {
+        "name": "FLUX.1 [dev] - art style (48 GB GPU, HF_TOKEN)",
+        "defaults": {
+          "BASE_MODEL": "flux-dev",
+          "PRESET": "style",
+          "STEPS": 2000,
+          "LORA_RANK": 32,
+          "LEARNING_RATE": "1e-4",
+          "RESOLUTION": 1024
+        }
+      },
+      {
+        "name": "Quick test (SDXL, 30 steps)",
+        "defaults": {
+          "BASE_MODEL": "sdxl",
+          "PRESET": "object",
+          "STEPS": 30,
+          "LORA_RANK": 8,
+          "LEARNING_RATE": "1e-4",
+          "RESOLUTION": 1024
+        }
+      }
+    ],
+    "env": [
+      {
+        "key": "BASE_MODEL",
+        "input": {
+          "name": "Base model",
+          "type": "string",
+          "description": "sdxl = Stable Diffusion XL 1.0 (24 GB GPU). flux-dev = FLUX.1 [dev] (gated + non-commercial license; needs HF_TOKEN, 48 GB GPU recommended). flux-schnell = FLUX.1 [schnell] (Apache-2.0, gated on HF, experimental). Can be overridden per job with input.base_model.",
+          "default": "sdxl",
+          "advanced": false,
+          "options": [
+            {
+              "label": "SDXL 1.0",
+              "value": "sdxl"
+            },
+            {
+              "label": "FLUX.1 [dev]",
+              "value": "flux-dev"
+            },
+            {
+              "label": "FLUX.1 [schnell] (experimental)",
+              "value": "flux-schnell"
+            }
+          ]
+        }
+      },
+      {
+        "key": "PRESET",
+        "input": {
+          "name": "Preset",
+          "type": "string",
+          "description": "Training defaults for the subject type (steps, rank, sample prompts). Explicit settings win.",
+          "default": "object",
+          "advanced": false,
+          "options": [
+            {
+              "label": "Object / product",
+              "value": "object"
+            },
+            {
+              "label": "Face / person",
+              "value": "face"
+            },
+            {
+              "label": "Art style",
+              "value": "style"
+            }
+          ]
+        }
+      },
+      {
+        "key": "TRIGGER_WORD",
+        "input": {
+          "name": "Default trigger word",
+          "type": "string",
+          "description": "Unique token that activates the LoRA, e.g. 'zxowl'. Usually set per job (input.trigger_word).",
+          "default": "",
+          "advanced": false
+        }
+      },
+      {
+        "key": "DATASET_URL",
+        "input": {
+          "name": "Default dataset URL",
+          "type": "string",
+          "description": "https URL of a .zip/.tar.gz with images and same-name .txt captions. Usually sent per job (input.dataset_url).",
+          "default": "",
+          "advanced": false
+        }
+      },
+      {
+        "key": "STEPS",
+        "input": {
+          "name": "Training steps",
+          "type": "number",
+          "description": "Optimizer steps. ~1000-2000 for a real LoRA; 30 for a smoke test.",
+          "default": 1200,
+          "min": 10,
+          "max": 20000,
+          "advanced": false
+        }
+      },
+      {
+        "key": "LORA_RANK",
+        "input": {
+          "name": "LoRA rank",
+          "type": "number",
+          "description": "Network dim. 16 for faces/objects, 32 for styles.",
+          "default": 16,
+          "min": 1,
+          "max": 256,
+          "advanced": false
+        }
+      },
+      {
+        "key": "LEARNING_RATE",
+        "input": {
+          "name": "Learning rate",
+          "type": "string",
+          "description": "1e-4 works for SDXL and FLUX LoRAs with AdamW8bit.",
+          "default": "1e-4",
+          "advanced": false
+        }
+      },
+      {
+        "key": "RESOLUTION",
+        "input": {
+          "name": "Resolution",
+          "type": "number",
+          "description": "Training resolution (multiple of 64). Images are bucketed by aspect ratio.",
+          "default": 1024,
+          "min": 512,
+          "max": 2048,
+          "advanced": false
+        }
+      },
+      {
+        "key": "CAPTION_MODE",
+        "input": {
+          "name": "Captions",
+          "type": "string",
+          "description": "auto = use .txt captions when present, else the trigger word; florence2 = auto-caption uncaptioned images with Florence-2; trigger = ignore captions.",
+          "default": "auto",
+          "advanced": false,
+          "options": [
+            {
+              "label": "Auto",
+              "value": "auto"
+            },
+            {
+              "label": "Florence-2 auto-captions",
+              "value": "florence2"
+            },
+            {
+              "label": "Trigger word only",
+              "value": "trigger"
+            },
+            {
+              "label": "Existing .txt only",
+              "value": "existing"
+            }
+          ]
+        }
+      },
+      {
+        "key": "NUM_SAMPLES",
+        "input": {
+          "name": "Sample images",
+          "type": "number",
+          "description": "Sample images rendered after training (0-4), returned as base64 and uploaded with the LoRA.",
+          "default": 2,
+          "min": 0,
+          "max": 4,
+          "advanced": false
+        }
+      },
+      {
+        "key": "HF_OUTPUT_REPO",
+        "input": {
+          "name": "Hugging Face output repo",
+          "type": "string",
+          "description": "Optional 'user/repo' to upload the LoRA + samples to. Needs HF_TOKEN with write access.",
+          "default": "",
+          "advanced": false
+        }
+      },
+      {
+        "key": "HF_PRIVATE",
+        "input": {
+          "name": "Private HF repo",
+          "type": "boolean",
+          "description": "Create the output repo as private.",
+          "default": true,
+          "trueValue": "true",
+          "falseValue": "false",
+          "advanced": true
+        }
+      },
+      {
+        "key": "HF_TOKEN",
+        "input": {
+          "name": "HF_TOKEN",
+          "type": "string",
+          "description": "Hugging Face token: read access to FLUX.1 (gated), write access for HF_OUTPUT_REPO. Use a Runpod secret: {{ RUNPOD_SECRET_hf_token }}.",
+          "default": "",
+          "advanced": true
+        }
+      },
+      {
+        "key": "OPTIMIZER",
+        "input": {
+          "name": "Optimizer",
+          "type": "string",
+          "description": "adamw8bit (default), adamw, adafactor (lowest VRAM) or prodigy (lr 1.0).",
+          "default": "adamw8bit",
+          "advanced": true,
+          "options": [
+            {
+              "label": "AdamW 8-bit",
+              "value": "adamw8bit"
+            },
+            {
+              "label": "AdamW",
+              "value": "adamw"
+            },
+            {
+              "label": "Adafactor",
+              "value": "adafactor"
+            },
+            {
+              "label": "Prodigy",
+              "value": "prodigy"
+            }
+          ]
+        }
+      },
+      {
+        "key": "BATCH_SIZE",
+        "input": {
+          "name": "Batch size",
+          "type": "number",
+          "description": "Images per step.",
+          "default": 1,
+          "min": 1,
+          "max": 16,
+          "advanced": true
+        }
+      },
+      {
+        "key": "SAVE_EVERY_N_STEPS",
+        "input": {
+          "name": "Checkpoint every N steps",
+          "type": "number",
+          "description": "Intermediate LoRA files (useful with a network volume). 0 = final only.",
+          "default": 0,
+          "min": 0,
+          "max": 20000,
+          "advanced": true
+        }
+      },
+      {
+        "key": "TRAIN_TIMEOUT_SECONDS",
+        "input": {
+          "name": "Training watchdog (s)",
+          "type": "number",
+          "description": "Kill sd-scripts after this many seconds (0 = off). Keep below the endpoint execution timeout.",
+          "default": 0,
+          "min": 0,
+          "max": 86400,
+          "advanced": true
+        }
+      }
+    ]
+  }
+}
