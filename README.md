@@ -182,7 +182,7 @@ Tokens and keys are **never** accepted in the job input (the job is rejected) �
 | `flux-dev` | 34 GB (FLUX.1-dev + AE, CLIP-L, T5-XXL fp16) | 48 GB recommended (L40S, RTX 6000 Ada, A6000, A40); 24 GB works with block swap | fp8 base, `flux_shift` timesteps, guidance 1.0 |
 | `flux-schnell` | 34 GB | same | Experimental — LoRAs on a distilled model are weaker |
 
-* **No weights are baked into the image** (image ≈ 8.5 GB). Models download at job start with `hf_transfer`.
+* **No weights are baked into the image** (image ≈ 8.8 GB). Models download at job start with `hf_transfer`.
   Attach a **network volume** to cache them in `/runpod-volume/image-lora/models` — later cold starts skip the download.
 * Measured timings: see [Measured GPU test](#measured-gpu-test).
 * Hub default endpoint execution timeout is **600 s** — raise it, or the job is killed mid-training.
