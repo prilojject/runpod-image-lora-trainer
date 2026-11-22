@@ -128,8 +128,13 @@ def ensure_models(cfg, token: str | None, progress=None) -> tuple[dict[str, str]
                 repo, rev = ref, None
                 if fn == "":
                     repo, fn, rev = _parse_hf_file(ref)
-                paths[name] = hf_hub_download(repo_id=repo, filename=fn, revision=rev, token=token,
-                                              cache_dir=os.path.join(cache, "hf"))
+                # local_dir gives a real file path ending in .safetensors (kohya rejects the
+                # symlinked blob paths of the HF cache layout).
+                local_dir = os.path.join(cache, repo.replace("/", "--") + (f"@{rev}" if rev else ""))
+                paths[name] = os.path.realpath(hf_hub_download(repo_id=repo, filename=fn, revision=rev,
+                                                               token=token, local_dir=local_dir))
+                if not paths[name].endswith(".safetensors"):
+                    raise ModelError(f"{name}: downloaded file is not a .safetensors path: {paths[name]}")
         except ModelError:
             raise
         except Exception as exc:

@@ -1,0 +1,18 @@
+{
+  "input": {
+    "base_model": "sdxl",
+    "dataset_url": "https://raw.githubusercontent.com/prilojject/runpod-image-lora-trainer/main/examples/datasets/owl_zxowl.zip",
+    "trigger_word": "zxowl",
+    "class_word": "figurine",
+    "preset": "object",
+    "steps": 800,
+    "rank": 16,
+    "learning_rate": 0.0001,
+    "num_samples": 4,
+    "hf_repo_id": "your-name/zxowl-sdxl-lora"
+  },
+  "policy": {
+    "executionTimeout": 7200000,
+    "ttl": 86400000
+  }
+}

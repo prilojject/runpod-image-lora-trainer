@@ -1,0 +1,16 @@
+{
+  "input": {
+    "base_model": "flux-dev",
+    "dataset_url": "https://example.com/my-style-images.zip",
+    "trigger_word": "mystyle",
+    "preset": "style",
+    "steps": 2000,
+    "rank": 32,
+    "num_samples": 4,
+    "hf_repo_id": "your-name/mystyle-flux-lora"
+  },
+  "policy": {
+    "executionTimeout": 14400000,
+    "ttl": 86400000
+  }
+}

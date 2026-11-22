@@ -1,0 +1,19 @@
+{
+  "input": {
+    "base_model": "sdxl",
+    "dataset_url": "https://raw.githubusercontent.com/prilojject/runpod-image-lora-trainer/main/examples/datasets/owl_zxowl.zip",
+    "trigger_word": "zxowl",
+    "class_word": "figurine",
+    "preset": "object",
+    "steps": 30,
+    "rank": 8,
+    "num_samples": 2,
+    "sample_steps": 20,
+    "sample_before": true,
+    "run_name": "smoke-sdxl-30"
+  },
+  "policy": {
+    "executionTimeout": 1800000,
+    "ttl": 3600000
+  }
+}

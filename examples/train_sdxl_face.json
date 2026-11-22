@@ -1,0 +1,17 @@
+{
+  "input": {
+    "base_model": "sdxl",
+    "dataset_url": "https://example.com/my-face-photos.zip",
+    "trigger_word": "ohwx",
+    "class_word": "man",
+    "preset": "face",
+    "steps": 1500,
+    "caption_mode": "florence2",
+    "num_samples": 4,
+    "hf_repo_id": "your-name/ohwx-sdxl-lora"
+  },
+  "policy": {
+    "executionTimeout": 10800000,
+    "ttl": 86400000
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "input": {
+    "base_model": "sdxl",
+    "hf_dataset": "diffusers/dog-example",
+    "trigger_word": "sks",
+    "class_word": "dog",
+    "preset": "object",
+    "steps": 500,
+    "num_samples": 2
+  },
+  "policy": {
+    "executionTimeout": 7200000
+  }
+}
