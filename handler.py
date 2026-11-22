@@ -122,6 +122,11 @@ def _handle(job: dict) -> dict[str, Any]:
     result["gpu"] = gpu
     if not gpu["gpu"]:
         return {"error": "no CUDA GPU visible to the worker", **{k: result[k] for k in ("run_name", "config")}}
+    if gpu.get("supported") is False:
+        return {"error": f"GPU {gpu['gpu']} (compute {gpu.get('compute_capability')}) is not supported by this "
+                         "image's PyTorch/CUDA 12.6 build (Blackwell GPUs are excluded in hub.json); "
+                         "redeploy on Ampere/Ada (RTX 4090, L4, A5000, L40S, A6000, A40)",
+                **{k: result[k] for k in ("run_name", "config")}, "gpu": gpu}
     if cfg.is_flux and gpu["vram_gb"] < 22:
         result["warnings"].append(f"FLUX on {gpu['vram_gb']} GB VRAM is slow (block swap); use a 24-48 GB GPU")
     try:

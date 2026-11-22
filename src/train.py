@@ -34,7 +34,12 @@ def gpu_info() -> dict[str, Any]:
         import torch
         if torch.cuda.is_available():
             p = torch.cuda.get_device_properties(0)
-            return {"gpu": p.name, "vram_gb": round(p.total_memory / 2**30, 1)}
+            major, minor = torch.cuda.get_device_capability(0)
+            archs = torch.cuda.get_arch_list()
+            supported = f"sm_{major}{minor}" in archs or any(
+                a.startswith(f"sm_{major}") and int(a[3:]) <= major * 10 + minor for a in archs)
+            return {"gpu": p.name, "vram_gb": round(p.total_memory / 2**30, 1),
+                    "compute_capability": f"{major}.{minor}", "supported": bool(supported)}
     except Exception:  # pragma: no cover
         pass
     return {"gpu": None, "vram_gb": 0.0}
