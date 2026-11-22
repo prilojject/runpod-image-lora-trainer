@@ -179,13 +179,12 @@ Tokens and keys are **never** accepted in the job input (the job is rejected) �
 | Base model | Download | GPU | Notes |
 |---|---|---|---|
 | `sdxl` | 6.9 GB (`stabilityai/stable-diffusion-xl-base-1.0`) | 24 GB (RTX 4090, L4, A5000, 3090) | UNet LoRA, cached TE outputs, bf16, gradient checkpointing |
-| `flux-dev` | 34 GB (FLUX.1-dev + AE, CLIP-L, T5-XXL fp16) | 48 GB recommended (L40S, A6000, A40); 24 GB works with block swap | fp8 base, `flux_shift` timesteps, guidance 1.0 |
+| `flux-dev` | 34 GB (FLUX.1-dev + AE, CLIP-L, T5-XXL fp16) | 48 GB recommended (L40S, RTX 6000 Ada, A6000, A40); 24 GB works with block swap | fp8 base, `flux_shift` timesteps, guidance 1.0 |
 | `flux-schnell` | 34 GB | same | Experimental — LoRAs on a distilled model are weaker |
 
 * **No weights are baked into the image** (image ≈ 8.5 GB). Models download at job start with `hf_transfer`.
   Attach a **network volume** to cache them in `/runpod-volume/image-lora/models` — later cold starts skip the download.
-* Measured smoke test (RTX 4090, Runpod Serverless, SDXL, 6 images, 30 steps at 1024 px, 1 worker, no volume): see
-  [GPU test results](#measured-gpu-test).
+* Measured timings: see [Measured GPU test](#measured-gpu-test).
 * Hub default endpoint execution timeout is **600 s** — raise it, or the job is killed mid-training.
 
 ## FLUX.1 license and access
@@ -200,7 +199,24 @@ Tokens and keys are **never** accepted in the job input (the job is rejected) �
 
 ## Measured GPU test
 
-TODO_GPU_RESULTS
+Runpod Serverless, 23 Nov 2026, image `v1.0.0` candidate, 1 worker, no network volume, FlashBoot off, example
+dataset (6 images at 1024 px with captions, trigger `zxowl figurine`):
+
+| Run | GPU | Queue + cold start | Model download | Training loop | Job total | Result |
+|---|---|---|---|---|---|---|
+| SDXL, 30 steps, rank 8 (= Hub test) | RTX 4090 24 GB | 50 s | 6.9 GB in 6 s | 39.5 s (incl. 2 samples) | 90 s | LoRA 40.9 MB, loss 0.132 |
+| SDXL, 400 steps, rank 16 | RTX 4090 24 GB | 5 s (warm) | 8.5 s | 372 s (incl. 4 samples) | 414 s | LoRA 81.5 MB, loss 0.106 |
+| FLUX.1 [schnell] fp8, 30 steps, rank 8 | RTX 6000 Ada 48 GB | 49 s | 22 GB in 97 s | 103 s (incl. before/after samples) | 243 s | LoRA 73.1 MB, loss 0.46 |
+
+* SDXL ≈ 0.93 s/step at 1024 px on an RTX 4090 → a 1200-step object LoRA is ~20 min of training.
+* Sample quality: after 30 steps SDXL draws a generic owl figurine (concept not learned yet, as expected); after
+  400 steps the teal body, gold dots and amber eyes are reproduced faithfully in new scenes (snow mountain,
+  studio, table). With only 6 photos the 400-step LoRA over-fits to "photo" — the watercolor prompt still came
+  out photographic; use more varied images or fewer steps / lower rank for style flexibility.
+* The FLUX run validated the full FLUX code path (download, fp8 base, cached T5/CLIP, training, sampling). It used
+  FLUX.1 [schnell] because the gated FLUX.1 [dev] needs your own HF token; dev runs through the same code.
+* Blackwell GPUs (RTX PRO 6000 MIG slices in the 24/48 GB pools) are excluded in `hub.json`: this image is built
+  on CUDA 12.6 / PyTorch 2.14.1 (sm_50–sm_90). The worker fails fast with a clear error on an unsupported GPU.
 
 ## How it works
 
