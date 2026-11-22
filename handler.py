@@ -42,6 +42,13 @@ def _progress_fn(job: dict):
 
 
 def handler(job: dict) -> dict[str, Any]:
+    result = _handle(job)
+    # Always start the next job on a fresh worker (frees GPU memory, drops partial downloads).
+    result["refresh_worker"] = True
+    return result
+
+
+def _handle(job: dict) -> dict[str, Any]:
     started = time.time()
     try:
         cfg = resolve_config(job.get("input") or {})
@@ -175,8 +182,7 @@ def handler(job: dict) -> dict[str, Any]:
              **({"image_base64": encode_sample(s, max_side=512, quality=80), "mime": "image/jpeg"}
                 if cfg.return_samples_base64 else {})}
             for i, s in enumerate(before_samples)]
-    result.update({"status": "completed", "elapsed_seconds": round(time.time() - started, 1),
-                   "refresh_worker": True})
+    result.update({"status": "completed", "elapsed_seconds": round(time.time() - started, 1)})
     shutil.rmtree(work, ignore_errors=True)
     return result
 
