@@ -1,0 +1,34 @@
+# Image LoRA Trainer (SDXL & FLUX.1) for Runpod Serverless
+
+> A Runpod Hub Serverless worker that trains SDXL or FLUX.1 LoRAs (faces, art styles, objects/products) with kohya-ss/sd-scripts v0.13. You send an https URL to a zip of images (optional same-name .txt captions) or a Hugging Face dataset, plus a trigger word and a preset; you get a .safetensors LoRA uploaded to your Hugging Face repo, S3 bucket, presigned URL or network volume, and 2-4 base64 sample images.
+
+Use this file to decide what to read next. Deploy from the Runpod Hub (live after moderation): https://console.runpod.io/hub/prilojject/runpod-image-lora-trainer
+
+Always use async POST /run and raise policy.executionTimeout (the 600 s default kills real training). Start with "dry_run": true to validate the dataset and model access without a GPU. FLUX.1 repos are gated: HF_TOKEN must be a Runpod secret, never job input. FLUX.1 [dev] LoRAs fall under the FLUX.1 [dev] Non-Commercial License. Configure an output (hf_repo_id, upload_url, BUCKET_* or a network volume) or the LoRA is lost with the worker.
+
+## Docs
+
+- [README](https://raw.githubusercontent.com/prilojject/runpod-image-lora-trainer/main/README.md): Quick start, dataset format, parameters, GPUs, cost, FLUX license, FAQ
+- [OpenAPI schema](https://raw.githubusercontent.com/prilojject/runpod-image-lora-trainer/main/openapi.yaml): Job input/output schema for /run and /status
+- [AGENTS.md](https://raw.githubusercontent.com/prilojject/runpod-image-lora-trainer/main/AGENTS.md): Instructions for coding agents (tests, dry run, secrets, paid GPU jobs)
+- [Hub metadata](https://raw.githubusercontent.com/prilojject/runpod-image-lora-trainer/main/.runpod/hub.json): Runpod Hub title, form fields, presets, GPU pools
+- [Hub tests](https://raw.githubusercontent.com/prilojject/runpod-image-lora-trainer/main/.runpod/tests.json): Official Hub test (30-step SDXL LoRA on 6 images)
+- [LICENSE](https://raw.githubusercontent.com/prilojject/runpod-image-lora-trainer/main/LICENSE): MIT license for the worker code
+
+## Examples
+
+- [Smoke test](https://raw.githubusercontent.com/prilojject/runpod-image-lora-trainer/main/examples/smoke_test_request.json): 30-step SDXL job with before/after samples
+- [Dry run](https://raw.githubusercontent.com/prilojject/runpod-image-lora-trainer/main/examples/dry_run.json): Validation-only request
+- [SDXL object](https://raw.githubusercontent.com/prilojject/runpod-image-lora-trainer/main/examples/train_sdxl_object.json): Product/object LoRA uploaded to Hugging Face
+- [SDXL face](https://raw.githubusercontent.com/prilojject/runpod-image-lora-trainer/main/examples/train_sdxl_face.json): Person LoRA with Florence-2 auto-captions
+- [FLUX.1 dev style](https://raw.githubusercontent.com/prilojject/runpod-image-lora-trainer/main/examples/train_flux_dev_style.json): Art-style LoRA on FLUX.1 [dev]
+- [HF dataset](https://raw.githubusercontent.com/prilojject/runpod-image-lora-trainer/main/examples/hf_dataset_request.json): Train from a Hugging Face dataset
+- [Example dataset](https://raw.githubusercontent.com/prilojject/runpod-image-lora-trainer/main/examples/datasets/owl_zxowl.zip): 6 captioned images (zip)
+
+## Optional
+
+- [Citation file](https://raw.githubusercontent.com/prilojject/runpod-image-lora-trainer/main/CITATION.cff): Citation metadata
+- [GitHub repository](https://github.com/prilojject/runpod-image-lora-trainer): Source, issues, releases
+- [kohya-ss/sd-scripts](https://github.com/kohya-ss/sd-scripts): Upstream trainer
+- [Runpod Hub docs](https://docs.runpod.io/hub/overview): How Hub deploy works
+- [Runpod pricing](https://www.runpod.io/pricing): Current Serverless GPU rates

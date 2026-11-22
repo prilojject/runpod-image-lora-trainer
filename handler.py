@@ -162,7 +162,9 @@ def _handle(job: dict) -> dict[str, Any]:
     from src.outputs import deliver, encode_sample
     progress({"stage": "uploading"})
     final_samples = [s for s in outs["samples"] if f"_{cfg.steps:06d}_" in os.path.basename(s)]
-    before_samples = [s for s in outs["samples"] if "_000000_" in os.path.basename(s)]
+    # kohya names baseline samples (--sample_at_first) with "e000000" or "000000".
+    before_samples = [s for s in outs["samples"]
+                      if "_e000000_" in os.path.basename(s) or "_000000_" in os.path.basename(s)]
     artifacts, warns = deliver(cfg, run_name, output_name, outs["lora_path"], final_samples + before_samples,
                                prompts, train, token, persistent)
     result["warnings"] += warns

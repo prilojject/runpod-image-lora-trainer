@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+title: "Image LoRA Trainer (SDXL & FLUX.1) — Runpod Serverless worker"
+message: "If you use this software, please cite it using these metadata."
+type: software
+authors:
+  - name: prilojject
+repository-code: "https://github.com/prilojject/runpod-image-lora-trainer"
+url: "https://console.runpod.io/hub/prilojject/runpod-image-lora-trainer"
+abstract: "Runpod Serverless worker that trains SDXL and FLUX.1 LoRAs (faces, styles, objects) with kohya-ss/sd-scripts from a zip of images or a Hugging Face dataset, and returns a .safetensors LoRA with sample images."
+keywords:
+  - Runpod
+  - LoRA
+  - SDXL
+  - FLUX.1
+  - kohya-ss
+  - Dreambooth
+  - Serverless
+  - text-to-image
+license: MIT
+version: "1.0.0"
+date-released: "2026-11-23"

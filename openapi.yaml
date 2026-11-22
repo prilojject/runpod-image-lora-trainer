@@ -1,0 +1,162 @@
+openapi: 3.1.0
+info:
+  title: Image LoRA Trainer (SDXL & FLUX.1) — Runpod Serverless
+  version: 1.0.0
+  description: |
+    Job schema of the prilojject/runpod-image-lora-trainer worker on Runpod Serverless.
+    Use async `POST /run`, then poll `GET /status/{id}`. Raise `policy.executionTimeout`
+    (the 600 s default is too short for training). Tokens are never sent in the job input.
+  license: {name: MIT}
+servers:
+  - url: https://api.runpod.ai/v2/{endpoint_id}
+    variables:
+      endpoint_id: {default: YOUR_ENDPOINT_ID}
+security:
+  - bearerAuth: []
+paths:
+  /run:
+    post:
+      summary: Queue a LoRA training (or dry-run) job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RunRequest'}
+      responses:
+        '200':
+          description: Job queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: {type: string}
+                  status: {type: string, example: IN_QUEUE}
+  /status/{id}:
+    get:
+      summary: Job status, progress and result
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+      responses:
+        '200':
+          description: Status
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StatusResponse'}
+  /cancel/{id}:
+    post:
+      summary: Cancel a job
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+      responses:
+        '200': {description: Cancelled}
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer, description: Runpod API key}
+  schemas:
+    RunRequest:
+      type: object
+      required: [input]
+      properties:
+        input: {$ref: '#/components/schemas/JobInput'}
+        policy:
+          type: object
+          properties:
+            executionTimeout: {type: integer, description: ms, example: 10800000}
+            ttl: {type: integer, description: ms, example: 86400000}
+    JobInput:
+      type: object
+      additionalProperties: false
+      properties:
+        base_model: {type: string, enum: [sdxl, flux-dev, flux-schnell], default: sdxl}
+        model_file: {type: string, description: "HF 'owner/repo/file.safetensors' or https URL"}
+        ae_file: {type: string}
+        dataset_url: {type: string, format: uri, description: .zip / .tar(.gz) of images + optional .txt captions}
+        hf_dataset: {type: string, example: diffusers/dog-example}
+        hf_dataset_split: {type: string, default: train}
+        image_column: {type: string, default: image}
+        caption_column: {type: string}
+        max_images: {type: integer, default: 200, minimum: 1, maximum: 5000}
+        trigger_word: {type: string, maxLength: 64}
+        class_word: {type: string}
+        caption_mode: {type: string, enum: [auto, existing, trigger, florence2], default: auto}
+        prepend_trigger: {type: boolean, default: true}
+        preset: {type: string, enum: [face, style, object], default: object}
+        steps: {type: integer, minimum: 10, maximum: 20000}
+        rank: {type: integer, minimum: 1, maximum: 256}
+        alpha: {type: number, description: 0 = rank}
+        learning_rate: {type: number, default: 0.0001}
+        resolution: {type: integer, default: 1024, multipleOf: 64}
+        batch_size: {type: integer, default: 1}
+        optimizer: {type: string, enum: [adamw8bit, adamw, adafactor, prodigy], default: adamw8bit}
+        lr_scheduler: {type: string, enum: [constant, constant_with_warmup, cosine, linear]}
+        warmup_steps: {type: integer, default: -1}
+        flip_aug: {type: boolean}
+        train_text_encoder: {type: boolean, default: false}
+        seed: {type: integer, default: 42}
+        save_every_n_steps: {type: integer, default: 0}
+        sample_prompts: {type: array, items: {type: string}}
+        num_samples: {type: integer, minimum: 0, maximum: 4, default: 2}
+        sample_steps: {type: integer, default: 0}
+        sample_before: {type: boolean, default: false}
+        return_samples_base64: {type: boolean, default: true}
+        output_name: {type: string}
+        run_name: {type: string}
+        hf_repo_id: {type: string}
+        hf_private: {type: boolean, default: true}
+        upload_url: {type: string, format: uri, description: presigned HTTP PUT URL for the LoRA}
+        upload_to_bucket: {type: boolean, default: true}
+        dry_run: {type: boolean, default: false}
+    StatusResponse:
+      type: object
+      properties:
+        id: {type: string}
+        status: {type: string, enum: [IN_QUEUE, IN_PROGRESS, COMPLETED, FAILED, CANCELLED, TIMED_OUT]}
+        delayTime: {type: integer}
+        executionTime: {type: integer}
+        output:
+          oneOf:
+            - $ref: '#/components/schemas/JobOutput'
+            - type: object
+              description: progress while IN_PROGRESS
+              properties:
+                stage: {type: string, enum: [preparing_dataset, downloading_model, training, uploading]}
+                step: {type: integer}
+                total_steps: {type: integer}
+                loss: {type: number}
+    JobOutput:
+      type: object
+      properties:
+        status: {type: string, enum: [completed, ok, error]}
+        error: {type: string}
+        gpu: {type: object, properties: {gpu: {type: string}, vram_gb: {type: number}}}
+        dataset: {type: object}
+        models: {type: object}
+        training:
+          type: object
+          properties:
+            global_step: {type: integer}
+            final_avr_loss: {type: number}
+            train_loop_seconds: {type: number}
+            total_seconds: {type: number}
+        artifacts:
+          type: object
+          properties:
+            lora_file: {type: string}
+            lora_path: {type: string}
+            lora_size_mb: {type: number}
+            hf_repo_url: {type: string}
+            bucket_lora_url: {type: string}
+            bucket_sample_urls: {type: array, items: {type: string}}
+            upload_url_status: {type: integer}
+            persistent_storage: {type: boolean}
+        samples:
+          type: array
+          items:
+            type: object
+            properties:
+              prompt: {type: string}
+              file: {type: string}
+              image_base64: {type: string}
+              mime: {type: string}
+        warnings: {type: array, items: {type: string}}
